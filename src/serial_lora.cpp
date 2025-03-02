@@ -143,7 +143,7 @@ if( uart_is_readable( p_uart ) )
     }
 
 /*----------------------------------------------------------
-Handle a new line char meaning a full command or args have 
+Handle a new line char meaning a full command & args have 
 been sent
 ----------------------------------------------------------*/
 if( new_line )
@@ -162,23 +162,67 @@ if( new_line )
 } /* test::lora_serial::runtime() */
 
 
-
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       test::lora_serial::x()
+*
+*   DESCRIPTION:
+*       transmit raw byte array over lora
+*
+*********************************************************************/
 void test::lora_serial::lora_tx( std::string args )
 {
-}
+}/* test::lora_serial::lora_tx() */
 
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       test::lora_serial::message_tx()
+*
+*   DESCRIPTION:
+*       transmit messageAPI message
+*
+*********************************************************************/
 void test::lora_serial::message_tx( std::string args )
 {
-}
+} /* test::lora_serial::message_tx() */
 
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       test::lora_serial::lora_rx()
+*
+*   DESCRIPTION:
+*       return any lora messages since last call
+*
+*********************************************************************/
 void test::lora_serial::lora_rx( std::string args )
 {
-}
+} /* test::lora_serial::lora_rx() */
 
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       test::lora_serial::message_rx()
+*
+*   DESCRIPTION:
+*       return any messageAPI messages since last call
+*
+*********************************************************************/
 void test::lora_serial::message_rx( std::string args )
 {
-}
+} /* test::lora_serial::message_rx() */
 
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       test::lora_serial::message_set_src()
+*
+*   DESCRIPTION:
+*       set source location (messageAPI)
+*
+*********************************************************************/
 void test::lora_serial::message_set_src( std::string args )
 {
 uint8_t src;
@@ -190,7 +234,15 @@ else
     current_location = (location)src;
 } /* test::lora_serial::message_set_src() */
 
-
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       test::lora_serial::message_set_key()
+*
+*   DESCRIPTION:
+*       set key (messageAPI)
+*
+*********************************************************************/
 void test::lora_serial::message_set_key( std::string args )
 {
 uint8_t key;
@@ -200,9 +252,26 @@ p_msg.update_key( key );
 std::cout << "Key updated to: " << key << "\r\n";
 } /* test::lora_serial::message_set_key() */
 
-
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       test::lora_serial::~lora_serial()
+*
+*   DESCRIPTION:
+*       deconstructor
+*
+*********************************************************************/
 test::lora_serial::~lora_serial(){}
 
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       test::lora_serial::starter_text()
+*
+*   DESCRIPTION:
+*       initial text lora serial will display
+*
+*********************************************************************/
 void test::lora_serial::starter_text( void ){
     std::cout << "Welcome to Lora/MsgAPI IO Tool. Usage is as follows:\r\n"\
                  " - lora rx:           lora get\r\n"\
@@ -211,9 +280,18 @@ void test::lora_serial::starter_text( void ){
                  " - msgAPI rx:         message get\r\n"\
                  " - msgAPI set source: message set source 0x00\r\n"\
                  " - msgAPI set key:    message set key 0x00\r\n";
-}
+} /* test::lora_serial::starter_text() */
 
-// --------------------
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       test::lora_serial::command_arg_parser()
+*
+*   DESCRIPTION:
+*       parses command and arguments sections & calls corisponding
+*       command function
+*
+*********************************************************************/
 void test::lora_serial::command_arg_parser( std::string s )
 {
 bool command_found = false;
@@ -237,4 +315,4 @@ if( !command_found )
 /* need to determine substr style */
 itr->second( s.substr( length+1 )) ;
 
-}
+} /* test::lora_serial::command_arg_parser() */
