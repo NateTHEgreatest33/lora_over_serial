@@ -17,11 +17,8 @@ pico_sdk_init()
 add_executable( SmartHomeCore
   src/main.cpp
 
-  src/background_task.cpp
-  src/background_task.hpp
-
-  src/test_mode.hpp
-  src/test_mode.cpp
+  src/serial_lora.cpp
+  src/serial_lora.hpp
 )
 
 # Debugger Attached
@@ -35,6 +32,7 @@ target_link_libraries(SmartHomeCore
   pico_stdlib
   hardware_spi
   pico_multicore
+  
   # Using Pico W
   pico_cyw43_arch_none
 
