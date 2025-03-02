@@ -15,7 +15,7 @@
                               INCLUDES
 --------------------------------------------------------------------*/
 #include "serial_lora.hpp"
-
+#include "sys_def.h"
 
 
 /*--------------------------------------------------------------------
@@ -25,7 +25,8 @@
 /*--------------------------------------------------------------------
                           LITERAL CONSTANTS
 --------------------------------------------------------------------*/
-#define MAX_CMD_STR_SIZE (100)               /* max length of comand */
+#define MAX_CMD_W_ARGS_STR_SIZE (100) /* max len of command w/ args */
+#define MAX_CMD_STR_SIZE        (20)  /* max len of command         */
 
 /*--------------------------------------------------------------------
                                 TYPES
@@ -65,14 +66,16 @@ test::lora_serial::lora_serial
     p_uart( uart_port ),
     p_msg( msg_ref ),
     p_lora( lora_ref ),
-    p_commands{ { "lora send",    [this](test::command_state s) { this->lora_tx(s); }    },
-                { "lora get",     [this](test::command_state s) { this->lora_rx(s); }    },
-                { "message send", [this](test::command_state s) { this->message_tx(s); } },
-                { "message get",  [this](test::command_state s) { this->message_rx(s); } } },
-    p_current_state( READING_COMMAND ),
+    p_commands{ { "lora send",          [this](std::string s) { this->lora_tx(s);         } },
+                { "lora get",           [this](std::string s) { this->lora_rx(s);         } },
+                { "message send",       [this](std::string s) { this->message_tx(s);      } },
+                { "message get",        [this](std::string s) { this->message_rx(s);      } },
+                { "message set source", [this](std::string s) { this->message_set_src(s); } },
+                { "message set key",    [this](std::string s) { this->message_set_key(s); } }},
     p_current_cmd( nullptr )
 {
 uart_init( p_uart, 115200 );
+starter_text();
 
 } /* test::lora_serial() */
 
@@ -130,7 +133,7 @@ if( uart_is_readable( p_uart ) )
     Don't allow p_buffer to grow exponentially. Reset
     console window and buffer
     ------------------------------------------------------*/
-    if ( p_buffer.length() > MAX_CMD_STR_SIZE )
+    if ( p_buffer.length() > MAX_CMD_W_ARGS_STR_SIZE )
         {
         uart_putc_raw( p_uart, '\r' );
         uart_putc_raw( p_uart, '\n' );
@@ -145,33 +148,10 @@ been sent
 ----------------------------------------------------------*/
 if( new_line )
     {
-    if( p_current_state == READING_COMMAND )
-        {
-        /*-------------------------------------------------
-        search for and run command if found
-        -------------------------------------------------*/
-        itr = p_commands.find( p_buffer );
-        if( itr != p_commands.end() )
-            {
-            p_current_cmd = itr->second;
-            p_current_cmd( p_current_state );
-            }
-        else
-            {
-            std::cout << "command not found" << std::endl;
-            }
-        }
-
-    if( p_current_state == ARGS_COMMAND )
-            {
-            /*-------------------------------------------------
-            search for and run command if found
-            -------------------------------------------------*/
-            p_current_cmd( ARGS_COMMAND );
-            }
-
-
-
+    /*------------------------------------------------------
+    parser args and command
+    ------------------------------------------------------*/
+    command_arg_parser( p_buffer );
 
     /*------------------------------------------------------
     clear buffer
@@ -183,23 +163,78 @@ if( new_line )
 
 
 
-void test::lora_serial::lora_tx( test::command_state s )
+void test::lora_serial::lora_tx( std::string args )
 {
-p_current_state = ARGS_COMMAND;
 }
-void test::lora_serial::message_tx( test::command_state s )
+
+void test::lora_serial::message_tx( std::string args )
 {
-p_current_state = ARGS_COMMAND;
 }
-void test::lora_serial::lora_rx( test::command_state s )
+
+void test::lora_serial::lora_rx( std::string args )
 {
-p_current_state = ARGS_COMMAND;
 }
-void test::lora_serial::message_rx( test::command_state s )
+
+void test::lora_serial::message_rx( std::string args )
 {
-p_current_state = ARGS_COMMAND;
 }
+
+void test::lora_serial::message_set_src( std::string args )
+{
+uint8_t src;
+src = std::stoul( args, nullptr, 16);
+
+if( src >= NUM_OF_MODULES )
+    std::cout << "Error: module ID does not match sys_def\r\n";
+else
+    current_location = (location)src;
+} /* test::lora_serial::message_set_src() */
+
+
+void test::lora_serial::message_set_key( std::string args )
+{
+uint8_t key;
+
+key = std::stoul( args, nullptr, 16);
+p_msg.update_key( key );
+std::cout << "Key updated to: " << key << "\r\n";
+} /* test::lora_serial::message_set_key() */
+
 
 test::lora_serial::~lora_serial(){}
 
-void test::lora_serial::starter_text( void ){}
+void test::lora_serial::starter_text( void ){
+    std::cout << "Welcome to Lora/MsgAPI IO Tool. Usage is as follows:\r\n"\
+                 " - lora rx:           lora get\r\n"\
+                 " - lora tx:           lora send 0x00 0x00....\r\n"\
+                 " - msgAPI tx:         message send 0x00 0x00....\r\n"\
+                 " - msgAPI rx:         message get\r\n"\
+                 " - msgAPI set source: message set source 0x00\r\n"\
+                 " - msgAPI set key:    message set key 0x00\r\n";
+}
+
+// --------------------
+void test::lora_serial::command_arg_parser( std::string s )
+{
+bool command_found = false;
+int length = 1;
+auto itr = p_commands.end(); /* iterator for command */  
+
+/* dont overrun length, dont go past max cmd str size, stop if found */
+while( length < s.length() && command_found != true && length < MAX_CMD_STR_SIZE )
+    {
+    /* attempt to find command */
+    itr = p_commands.find( s.substr( 0, length ) );
+
+    if( itr != p_commands.end() )
+        command_found = true;
+        
+    }
+
+/* fast exit, no command found */
+if( !command_found )
+    return;
+/* need to determine substr style */
+itr->second( s.substr( length+1 )) ;
+
+}

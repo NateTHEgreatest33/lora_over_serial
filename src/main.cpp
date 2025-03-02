@@ -37,7 +37,9 @@
 /*--------------------------------------------------------------------
                            MEMORY CONSTANTS
 --------------------------------------------------------------------*/
-const location current_location = PICO_MODULE;
+location current_location = PICO_MODULE; /* WARNING: this is no longer
+                                            const, to allow user to set
+                                            source */
 
 /*--------------------------------------------------------------------
                               VARIABLES

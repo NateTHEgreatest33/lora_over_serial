@@ -72,17 +72,19 @@ class lora_serial
         lora_serial& operator= (const lora_serial&) = delete;
 
     private:
-        void lora_tx( test::command_state ); //send data 
-        void message_tx( test::command_state );
-        void lora_rx( test::command_state );
-        void message_rx( test::command_state );
+        void lora_tx( std::string args ); //send data 
+        void message_tx( std::string args );
+        void lora_rx( std::string args );
+        void message_rx( std::string args );
+        void message_set_src( std::string args );
+        void message_set_key( std::string args );
 
 
+        void command_arg_parser( std::string s);
         void starter_text( void );
         bool p_first_run;
         
         std::string p_buffer; 
-        test::command_state p_current_state;
         std::function< void(test::command_state s )> p_current_cmd;
 
 
@@ -90,7 +92,7 @@ class lora_serial
         core::loraInterface& p_lora;
         core::messageInterface& p_msg;
         
-        const std::unordered_map< std::string, std::function< void( test::command_state s ) > > p_commands;
+        const std::unordered_map< std::string, std::function< void( std::string args ) > > p_commands;
 
 
     };
