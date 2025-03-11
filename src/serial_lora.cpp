@@ -28,6 +28,15 @@
 #define MAX_CMD_W_ARGS_STR_SIZE (100) /* max len of command w/ args */
 #define MAX_CMD_STR_SIZE        (20)  /* max len of command         */
 
+const std::string starter_str = "Welcome to Lora/MsgAPI IO Tool."\
+                 "Usage is as follows:\r\n"\
+                 " - lora rx:           lora get\r\n"\
+                 " - lora tx:           lora send 0x00 0x00....\r\n"\
+                 " - msgAPI tx:         message send 0x00 0x00....\r\n"\
+                 " - msgAPI rx:         message get\r\n"\
+                 " - msgAPI set source: message set source 0x00\r\n"\
+                 " - msgAPI set key:    message set key 0x00\r\n";
+
 /*--------------------------------------------------------------------
                                 TYPES
 --------------------------------------------------------------------*/
@@ -74,7 +83,7 @@ test::lora_serial::lora_serial
                 { "message set key",    [this](std::string s) { this->message_set_key(s); } }},
     p_current_cmd( nullptr )
 {
-uart_init( p_uart, 115200 );
+
 starter_text();
 
 } /* test::lora_serial() */
@@ -102,7 +111,10 @@ local variables
 ----------------------------------------------------------*/
 char c        = 0x00;             /*  temporary character */
 bool new_line = false;            /* new line rx'ed (Y/N) */
-auto itr      = p_commands.end(); /* iterator for command */  
+auto itr      = p_commands.end(); /* iterator for command */
+
+
+// printf("hello world1\n");
 
 /*----------------------------------------------------------
 Check if console is clean
@@ -273,13 +285,8 @@ test::lora_serial::~lora_serial(){}
 *
 *********************************************************************/
 void test::lora_serial::starter_text( void ){
-    std::cout << "Welcome to Lora/MsgAPI IO Tool. Usage is as follows:\r\n"\
-                 " - lora rx:           lora get\r\n"\
-                 " - lora tx:           lora send 0x00 0x00....\r\n"\
-                 " - msgAPI tx:         message send 0x00 0x00....\r\n"\
-                 " - msgAPI rx:         message get\r\n"\
-                 " - msgAPI set source: message set source 0x00\r\n"\
-                 " - msgAPI set key:    message set key 0x00\r\n";
+    std::cout << starter_str;
+    printf("\n\n\nhello world\n");
 } /* test::lora_serial::starter_text() */
 
 /*********************************************************************

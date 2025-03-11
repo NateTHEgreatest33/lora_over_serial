@@ -22,11 +22,12 @@ add_executable( SmartHomeCore
 )
 
 # Debugger Attached
-pico_enable_stdio_usb( SmartHomeCore 0)
-pico_enable_stdio_uart( SmartHomeCore 1)
+# pico_enable_stdio_usb( SmartHomeCore 0)
+# pico_enable_stdio_uart( SmartHomeCore 1)
 
-# # No Debugger
-# pico_enable_stdio_usb( {PROJECTNAME} 1)
+# # No Debugger, uart over USB
+pico_enable_stdio_usb( SmartHomeCore 1)
+pico_enable_stdio_uart( SmartHomeCore 0)
 
 target_link_libraries(SmartHomeCore
   pico_stdlib
@@ -44,6 +45,8 @@ target_link_libraries(SmartHomeCore
   consoleAPI
 
 )
+
+
 
 #make uf2
 pico_add_extra_outputs(SmartHomeCore)
