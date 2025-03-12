@@ -81,7 +81,7 @@ test::lora_serial::lora_serial
                 { "message get",        [this](std::string s) { this->message_rx(s);      } },
                 { "message set source", [this](std::string s) { this->message_set_src(s); } },
                 { "message set key",    [this](std::string s) { this->message_set_key(s); } },
-                { "help",               [this](std::string s) { this->starter_text(); } }},
+                { "help",               [this](std::string s) { this->starter_text();     } }},
 
     p_current_cmd( nullptr )
 {
@@ -116,14 +116,9 @@ int return_val = 0x00;
 bool new_line = false;            /* new line rx'ed (Y/N) */
 auto itr      = p_commands.end(); /* iterator for command */
 
-
-// printf("hello world1\n");
-// std::cout << "test1\n";
-// std::cin >> 
 /*----------------------------------------------------------
 Check if console is clean
 ----------------------------------------------------------*/
-// if( uart_is_readable( p_uart ) )   
 return_val = getchar_timeout_us(0);
 
 if( return_val != PICO_ERROR_TIMEOUT )
@@ -200,8 +195,25 @@ if( new_line )
 *********************************************************************/
 void test::lora_serial::lora_tx( std::string args )
 {
-std:: cout << "arguments passed into lora send: " << args << std::endl;
+std::cout << "Not implemented yet" << std::endl;
+return;
 }/* test::lora_serial::lora_tx() */
+
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       test::lora_serial::lora_rx()
+*
+*   DESCRIPTION:
+*       return any lora messages since last call
+*
+*********************************************************************/
+void test::lora_serial::lora_rx( std::string args )
+{ /* no args */
+std::cout << "Not implemented yet" << std::endl;
+return;
+} /* test::lora_serial::lora_rx() */
+
 
 /*********************************************************************
 *
@@ -214,20 +226,44 @@ std:: cout << "arguments passed into lora send: " << args << std::endl;
 *********************************************************************/
 void test::lora_serial::message_tx( std::string args )
 {
-} /* test::lora_serial::message_tx() */
+    /* args:
+    1) byte 1 - dest
+    2) byte 2 - size
+    3) byte X - data...  
+    */
 
-/*********************************************************************
-*
-*   PROCEDURE NAME:
-*       test::lora_serial::lora_rx()
-*
-*   DESCRIPTION:
-*       return any lora messages since last call
-*
-*********************************************************************/
-void test::lora_serial::lora_rx( std::string args )
-{
-} /* test::lora_serial::lora_rx() */
+    tx_message tx_msg;
+    int i{0};
+    uint8_t msg_idx{0};
+
+    /* Verify and set destination + size */
+    if ( args.length() < 9  )
+        {
+        std::cout << "argument list is too small for messageTX";
+        }
+    else
+        {
+        tx_msg.destination = (location) std::stoi( args.substr(0,4), 0, 16 );
+        tx_msg.size = (uint8_t) std::stoi( args.substr(5,4), 0, 16 );
+        std::cout << "Dest: " << (int)tx_msg.destination << " Size: " << (int)tx_msg.size << std::endl;
+        }
+    /* set i to start of data stream */
+    i = 10;
+    
+    /* loop until data is filled in*/
+    while( (i+4) <= args.length() && msg_idx < 10 )
+        {
+        tx_msg.message[msg_idx++] = std::stoi( args.substr(i,4), 0, 16 );
+        i += 5;
+        }
+    
+    /* send data and report errors */
+    if( !p_msg.send_message( tx_msg ) )
+        {
+        std::cout << "Error sending message" << std::endl;
+        }
+
+} /* test::lora_serial::message_tx() */
 
 /*********************************************************************
 *
@@ -240,6 +276,36 @@ void test::lora_serial::lora_rx( std::string args )
 *********************************************************************/
 void test::lora_serial::message_rx( std::string args )
 {
+auto rtn = p_msg.get_multi_message();
+
+/* error handling*/
+if( rtn.global_errors != MSG_NO_ERROR )
+    {
+    std::cout << "global errors on Rx: " << rtn.global_errors << std::endl;
+    return;
+    }
+
+/* no msg case */
+if( rtn.num_messages == 0 )
+    {
+    std::cout << "No Msg's Rx'ed"<< std::endl;
+    return;
+    }
+
+/* messages case */
+for( int i = 0; i < rtn.num_messages; i++ )
+    {
+    rx_message curr_msg = rtn.messages[i];
+    std::cout << "Msg " << i << " - S: " << curr_msg.source << " V: " << curr_msg.valid;
+    for( int j = 0; j < curr_msg.size; j++ )
+        {
+        std::cout << "["<< std::hex << curr_msg.message[j] << "] ";
+        }
+    std::cout << std::endl << std::dec; 
+    }
+
+
+
 } /* test::lora_serial::message_rx() */
 
 /*********************************************************************
