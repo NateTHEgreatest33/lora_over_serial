@@ -29,7 +29,7 @@
 #define MAX_CMD_STR_SIZE        (20)  /* max len of command         */
 
 const std::string starter_str = "Welcome to Lora/MsgAPI IO Tool."\
-                 "Usage is as follows:\r\n"\
+                 " Usage is as follows:\r\n"\
                  " - lora rx:           lora get\r\n"\
                  " - lora tx:           lora send 0x00 0x00....\r\n"\
                  " - msgAPI tx:         message send 0x00 0x00....\r\n"\
@@ -80,7 +80,9 @@ test::lora_serial::lora_serial
                 { "message send",       [this](std::string s) { this->message_tx(s);      } },
                 { "message get",        [this](std::string s) { this->message_rx(s);      } },
                 { "message set source", [this](std::string s) { this->message_set_src(s); } },
-                { "message set key",    [this](std::string s) { this->message_set_key(s); } }},
+                { "message set key",    [this](std::string s) { this->message_set_key(s); } },
+                { "help",               [this](std::string s) { this->starter_text(); } }},
+
     p_current_cmd( nullptr )
 {
 
@@ -110,25 +112,33 @@ void test::lora_serial::runtime
 local variables
 ----------------------------------------------------------*/
 char c        = 0x00;             /*  temporary character */
+int return_val = 0x00;
 bool new_line = false;            /* new line rx'ed (Y/N) */
 auto itr      = p_commands.end(); /* iterator for command */
 
 
 // printf("hello world1\n");
-
+// std::cout << "test1\n";
+// std::cin >> 
 /*----------------------------------------------------------
 Check if console is clean
 ----------------------------------------------------------*/
-if( uart_is_readable( p_uart ) )    
+// if( uart_is_readable( p_uart ) )   
+return_val = getchar_timeout_us(0);
+
+if( return_val != PICO_ERROR_TIMEOUT )
     {
-    c = uart_getc( p_uart );
+    
+    c = (char)return_val;
     /*------------------------------------------------------
     clean \r command if rx'ed
     ------------------------------------------------------*/
     if( c == '\r')
         {
-        uart_putc_raw( p_uart, '\r' );
-        uart_putc_raw( p_uart, '\n' );
+        // uart_putc_raw( p_uart, '\r' );
+        // uart_putc_raw( p_uart, '\n' );
+        putchar( '\r' );
+        putchar( '\n' );
         new_line = true;
         }
     else
@@ -138,7 +148,8 @@ if( uart_is_readable( p_uart ) )
         input has been processed. 
         --------------------------------------------------*/
         p_buffer += c;
-        uart_putc_raw( p_uart, c );
+        // uart_putc_raw( p_uart, c );
+        putchar( c );
         }  
 
     /*------------------------------------------------------
@@ -147,8 +158,10 @@ if( uart_is_readable( p_uart ) )
     ------------------------------------------------------*/
     if ( p_buffer.length() > MAX_CMD_W_ARGS_STR_SIZE )
         {
-        uart_putc_raw( p_uart, '\r' );
-        uart_putc_raw( p_uart, '\n' );
+        // uart_putc_raw( p_uart, '\r' );
+        // uart_putc_raw( p_uart, '\n' );
+        putchar( '\r' );
+        putchar( '\n' );
         p_buffer="";
         }
 
@@ -163,6 +176,8 @@ if( new_line )
     /*------------------------------------------------------
     parser args and command
     ------------------------------------------------------*/
+    // printf(" new line hit...\n");
+    // std::cout << " new line hit...\n";
     command_arg_parser( p_buffer );
 
     /*------------------------------------------------------
@@ -185,6 +200,7 @@ if( new_line )
 *********************************************************************/
 void test::lora_serial::lora_tx( std::string args )
 {
+std:: cout << "arguments passed into lora send: " << args << std::endl;
 }/* test::lora_serial::lora_tx() */
 
 /*********************************************************************
@@ -286,7 +302,6 @@ test::lora_serial::~lora_serial(){}
 *********************************************************************/
 void test::lora_serial::starter_text( void ){
     std::cout << starter_str;
-    printf("\n\n\nhello world\n");
 } /* test::lora_serial::starter_text() */
 
 /*********************************************************************
@@ -304,9 +319,10 @@ void test::lora_serial::command_arg_parser( std::string s )
 bool command_found = false;
 int length = 1;
 auto itr = p_commands.end(); /* iterator for command */  
+std::cout << "starting arg parse...\n\r";
 
 /* dont overrun length, dont go past max cmd str size, stop if found */
-while( length < s.length() && command_found != true && length < MAX_CMD_STR_SIZE )
+while( length <= s.length() && command_found != true && length < MAX_CMD_STR_SIZE )
     {
     /* attempt to find command */
     itr = p_commands.find( s.substr( 0, length ) );
@@ -314,12 +330,23 @@ while( length < s.length() && command_found != true && length < MAX_CMD_STR_SIZE
     if( itr != p_commands.end() )
         command_found = true;
         
+    //update length
+    length++;
+
     }
 
 /* fast exit, no command found */
 if( !command_found )
+    {
+    std::cout << "Command not found\n\r";
     return;
-/* need to determine substr style */
-itr->second( s.substr( length+1 )) ;
+    }
+
+/* sanitize string for non argument commands */
+if( length > s.length() )
+    length = 0;
+
+/* no +1 is needed as we already increment @ the end */
+itr->second( s.substr( length )) ;
 
 } /* test::lora_serial::command_arg_parser() */
