@@ -130,8 +130,6 @@ if( return_val != PICO_ERROR_TIMEOUT )
     ------------------------------------------------------*/
     if( c == '\r')
         {
-        // uart_putc_raw( p_uart, '\r' );
-        // uart_putc_raw( p_uart, '\n' );
         putchar( '\r' );
         putchar( '\n' );
         new_line = true;
@@ -143,7 +141,6 @@ if( return_val != PICO_ERROR_TIMEOUT )
         input has been processed. 
         --------------------------------------------------*/
         p_buffer += c;
-        // uart_putc_raw( p_uart, c );
         putchar( c );
         }  
 
@@ -153,8 +150,6 @@ if( return_val != PICO_ERROR_TIMEOUT )
     ------------------------------------------------------*/
     if ( p_buffer.length() > MAX_CMD_W_ARGS_STR_SIZE )
         {
-        // uart_putc_raw( p_uart, '\r' );
-        // uart_putc_raw( p_uart, '\n' );
         putchar( '\r' );
         putchar( '\n' );
         p_buffer="";
@@ -171,8 +166,6 @@ if( new_line )
     /*------------------------------------------------------
     parser args and command
     ------------------------------------------------------*/
-    // printf(" new line hit...\n");
-    // std::cout << " new line hit...\n";
     command_arg_parser( p_buffer );
 
     /*------------------------------------------------------
@@ -231,7 +224,6 @@ void test::lora_serial::message_tx( std::string args )
     2) byte 2 - size
     3) byte X - data...  
     */
-
     tx_message tx_msg;
     int i{0};
     uint8_t msg_idx{0};
@@ -239,14 +231,14 @@ void test::lora_serial::message_tx( std::string args )
     /* Verify and set destination + size */
     if ( args.length() < 9  )
         {
-        std::cout << "argument list is too small for messageTX";
+        std::cout << "too few arguments\r\n";
+        return;
         }
-    else
-        {
-        tx_msg.destination = (location) std::stoi( args.substr(0,4), 0, 16 );
-        tx_msg.size = (uint8_t) std::stoi( args.substr(5,4), 0, 16 );
-        std::cout << "Dest: " << (int)tx_msg.destination << " Size: " << (int)tx_msg.size << std::endl;
-        }
+
+    /* grab dest and size */
+    tx_msg.destination = (location) std::stoi( args.substr(0,4), 0, 16 );
+    tx_msg.size = (uint8_t) std::stoi( args.substr(5,4), 0, 16 );
+
     /* set i to start of data stream */
     i = 10;
     
@@ -255,6 +247,12 @@ void test::lora_serial::message_tx( std::string args )
         {
         tx_msg.message[msg_idx++] = std::stoi( args.substr(i,4), 0, 16 );
         i += 5;
+        }
+
+    if( msg_idx != tx_msg.size )
+        {
+        std::cout << "argument size does not match data size\r\n";
+        return;
         }
     
     /* send data and report errors */
@@ -277,6 +275,7 @@ void test::lora_serial::message_tx( std::string args )
 void test::lora_serial::message_rx( std::string args )
 {
 auto rtn = p_msg.get_multi_message();
+// std::cout << "Got into msg rx\r\n";
 
 /* error handling*/
 if( rtn.global_errors != MSG_NO_ERROR )
