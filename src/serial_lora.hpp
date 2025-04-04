@@ -41,6 +41,12 @@ ARGS_COMMAND,
 NUM_COMMANDS
 };
 
+
+struct parsed_args{
+uint8_t args[100];
+uint8_t size;
+};
+
 /*--------------------------------------------------------------------
                            MEMORY CONSTANTS
 --------------------------------------------------------------------*/
@@ -81,6 +87,7 @@ class lora_serial
 
 
         void command_arg_parser( std::string s);
+        parsed_args arg_parser(std::string& args);
         void starter_text( void );
         bool p_first_run;
         

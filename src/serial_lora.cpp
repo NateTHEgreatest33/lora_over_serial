@@ -16,6 +16,7 @@
 --------------------------------------------------------------------*/
 #include "serial_lora.hpp"
 #include "sys_def.h"
+#include <cstring>
 
 
 /*--------------------------------------------------------------------
@@ -204,6 +205,13 @@ return;
 void test::lora_serial::lora_rx( std::string args )
 { /* no args */
 std::cout << "Not implemented yet" << std::endl;
+
+auto arg_lst = arg_parser(args);
+
+if( !p_lora.send_message(arg_lst.args, arg_lst.size) )
+    {
+    std::cout <<"error sending message" << std::endl;
+    }
 return;
 } /* test::lora_serial::lora_rx() */
 
@@ -295,10 +303,10 @@ if( rtn.num_messages == 0 )
 for( int i = 0; i < rtn.num_messages; i++ )
     {
     rx_message curr_msg = rtn.messages[i];
-    std::cout << "Msg " << i << " - S: " << curr_msg.source << " V: " << curr_msg.valid;
+    std::cout << "Msg " << i << " - S: " << std::to_string(curr_msg.source) << " V: " << std::to_string(curr_msg.valid) << " M: ";
     for( int j = 0; j < curr_msg.size; j++ )
         {
-        std::cout << "["<< std::hex << curr_msg.message[j] << "] ";
+        std::cout << "[" << std::to_string(curr_msg.message[j]) << "] ";
         }
     std::cout << std::endl << std::dec; 
     }
@@ -415,3 +423,24 @@ if( length > s.length() )
 itr->second( s.substr( length )) ;
 
 } /* test::lora_serial::command_arg_parser() */
+
+
+
+test::parsed_args test::lora_serial::arg_parser
+    (
+    std::string& args
+    )
+{
+test::parsed_args p_args;
+int idx = 0;
+memset( &p_args, 0, sizeof(test::parsed_args));
+//note, args must allways be in hex formatted as 0x00 w/ spaces between them
+
+while( (idx+4) <= args.length() )
+    {
+    p_args.args[p_args.size++] = std::stoi( args.substr(idx,4), 0, 16 );
+    idx+=5; //skip over white space
+    }
+
+return p_args;
+} /* test::lora_serial::arg_parser() */
