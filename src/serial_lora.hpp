@@ -79,6 +79,8 @@ class lora_serial
 
     private:
         void lora_tx( std::string args ); //send data 
+        void lora_tx_init( std::string args );
+        void lora_rx_init( std::string args );
         void message_tx( std::string args );
         void lora_rx( std::string args );
         void message_rx( std::string args );

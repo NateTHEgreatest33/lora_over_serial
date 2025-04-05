@@ -17,6 +17,7 @@
 #include "serial_lora.hpp"
 #include "sys_def.h"
 #include <cstring>
+// #include <format>
 
 
 /*--------------------------------------------------------------------
@@ -33,6 +34,8 @@ const std::string starter_str = "Welcome to Lora/MsgAPI IO Tool."\
                  " Usage is as follows:\r\n"\
                  " - lora rx:           lora get\r\n"\
                  " - lora tx:           lora send 0x00 0x00....\r\n"\
+                 " - lora init rx:      lora init rx\r\n"\
+                 " - lora init tx:      lora init tx\r\n"\
                  " - msgAPI tx:         message send 0x00 0x00....\r\n"\
                  " - msgAPI rx:         message get\r\n"\
                  " - msgAPI set source: message set source 0x00\r\n"\
@@ -78,6 +81,8 @@ test::lora_serial::lora_serial
     p_lora( lora_ref ),
     p_commands{ { "lora send",          [this](std::string s) { this->lora_tx(s);         } },
                 { "lora get",           [this](std::string s) { this->lora_rx(s);         } },
+                { "lora init rx",       [this](std::string s) { this->lora_rx_init(s);    } },
+                { "lora init tx",       [this](std::string s) { this->lora_tx_init(s);    } },
                 { "message send",       [this](std::string s) { this->message_tx(s);      } },
                 { "message get",        [this](std::string s) { this->message_rx(s);      } },
                 { "message set source", [this](std::string s) { this->message_set_src(s); } },
@@ -181,39 +186,60 @@ if( new_line )
 /*********************************************************************
 *
 *   PROCEDURE NAME:
-*       test::lora_serial::x()
-*
-*   DESCRIPTION:
-*       transmit raw byte array over lora
-*
-*********************************************************************/
-void test::lora_serial::lora_tx( std::string args )
-{
-std::cout << "Not implemented yet" << std::endl;
-return;
-}/* test::lora_serial::lora_tx() */
-
-/*********************************************************************
-*
-*   PROCEDURE NAME:
-*       test::lora_serial::lora_rx()
+*       test::lora_serial::rx()
 *
 *   DESCRIPTION:
 *       return any lora messages since last call
 *
 *********************************************************************/
 void test::lora_serial::lora_rx( std::string args )
-{ /* no args */
-std::cout << "Not implemented yet" << std::endl;
+{
+#define MAX_MSG_SIZE (100)
+uint8_t msg[100];
+uint8_t msg_size = MAX_MSG_SIZE;
+uint8_t rtn_size = 0;
+lora_errors errs;
+bool msg_rxed = false;
 
+msg_rxed = p_lora.get_message( &(msg[0]), msg_size, &rtn_size, &errs );
+
+
+if( !msg_rxed )
+    {
+    std::cout << "Error: No Message Rx'ed" << std::endl;
+    return;
+    }
+
+int idx = 0;
+while( idx <= MAX_MSG_SIZE && idx < rtn_size )
+    {
+    std::cout << std::to_string(msg[idx++]) << " " ;
+    // std::cout << std::format("{:#x}", msg[idx++]) << " " ;
+    }
+std::cout << std::endl;
+
+
+}/* test::lora_serial::lora_rx() */
+
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       test::lora_serial::lora_tx()
+*
+*   DESCRIPTION:
+*       transmit raw byte array over lora
+*
+*********************************************************************/
+void test::lora_serial::lora_tx( std::string args )
+{ /* no args */
 auto arg_lst = arg_parser(args);
 
 if( !p_lora.send_message(arg_lst.args, arg_lst.size) )
     {
-    std::cout <<"error sending message" << std::endl;
+    std::cout <<"Error: error sending message" << std::endl;
     }
 return;
-} /* test::lora_serial::lora_rx() */
+} /* test::lora_serial::lora_tx() */
 
 
 /*********************************************************************
@@ -239,7 +265,7 @@ void test::lora_serial::message_tx( std::string args )
     /* Verify and set destination + size */
     if ( args.length() < 9  )
         {
-        std::cout << "too few arguments\r\n";
+        std::cout << "Error: too few arguments\r\n";
         return;
         }
 
@@ -259,14 +285,14 @@ void test::lora_serial::message_tx( std::string args )
 
     if( msg_idx != tx_msg.size )
         {
-        std::cout << "argument size does not match data size\r\n";
+        std::cout << "Error: argument size does not match data size\r\n";
         return;
         }
     
     /* send data and report errors */
     if( !p_msg.send_message( tx_msg ) )
         {
-        std::cout << "Error sending message" << std::endl;
+        std::cout << "Error: error sending message" << std::endl;
         }
 
 } /* test::lora_serial::message_tx() */
@@ -283,19 +309,18 @@ void test::lora_serial::message_tx( std::string args )
 void test::lora_serial::message_rx( std::string args )
 {
 auto rtn = p_msg.get_multi_message();
-// std::cout << "Got into msg rx\r\n";
 
 /* error handling*/
 if( rtn.global_errors != MSG_NO_ERROR )
     {
-    std::cout << "global errors on Rx: " << rtn.global_errors << std::endl;
+    std::cout << "Error: global errors on Rx: " << rtn.global_errors << std::endl;
     return;
     }
 
 /* no msg case */
 if( rtn.num_messages == 0 )
     {
-    std::cout << "No Msg's Rx'ed"<< std::endl;
+    std::cout << "Error: No Msg's Rx'ed"<< std::endl;
     return;
     }
 
@@ -377,6 +402,24 @@ void test::lora_serial::starter_text( void ){
     std::cout << starter_str;
 } /* test::lora_serial::starter_text() */
 
+
+void test::lora_serial::lora_rx_init
+    (
+    std::string args
+    )
+{
+p_lora.init_continious_rx();
+}
+
+void test::lora_serial::lora_tx_init
+    (
+    std::string args
+    )
+{
+p_lora.init_tx();
+}
+
+
 /*********************************************************************
 *
 *   PROCEDURE NAME:
@@ -392,7 +435,7 @@ void test::lora_serial::command_arg_parser( std::string s )
 bool command_found = false;
 int length = 1;
 auto itr = p_commands.end(); /* iterator for command */  
-std::cout << "starting arg parse...\n\r";
+// std::cout << "starting arg parse...\n\r";
 
 /* dont overrun length, dont go past max cmd str size, stop if found */
 while( length <= s.length() && command_found != true && length < MAX_CMD_STR_SIZE )
@@ -411,7 +454,7 @@ while( length <= s.length() && command_found != true && length < MAX_CMD_STR_SIZ
 /* fast exit, no command found */
 if( !command_found )
     {
-    std::cout << "Command not found\n\r";
+    std::cout << "Error: Command not found\n\r";
     return;
     }
 
